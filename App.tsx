@@ -14,6 +14,7 @@ import SettingsPage from './components/SettingsPage';
 import AuthPage from './components/AuthPage';
 import ClientManagement from './components/ClientManagement';
 import LoyaltyManagementAdmin from './components/LoyaltyManagementAdmin';
+import AdminBookings from './components/AdminBookings';
 import { UserRole } from './types';
 
 const App: React.FC = () => {
@@ -81,6 +82,7 @@ const App: React.FC = () => {
         case 'clients': return <ClientManagement />;
         case 'loyalty_admin': return <LoyaltyManagementAdmin user={user} onUpgrade={navigateToUpgrade} />;
         case 'settings': return <SettingsPage user={user} initialTab={initialSettingsTab} />;
+        case 'bookings_admin': return <AdminBookings />;
         default: return <AdminDashboard user={user} />;
       }
     }

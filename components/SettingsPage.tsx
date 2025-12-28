@@ -23,7 +23,10 @@ import {
   CreditCard,
   Zap,
   Star,
-  Crown
+  Crown,
+  Edit3,
+  Check,
+  Key
 } from 'lucide-react';
 import { Service } from '../types';
 import { MOCK_SERVICES } from '../constants';
@@ -36,14 +39,19 @@ interface SettingsPageProps {
 const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
   const [activeTab, setActiveTab] = useState(initialTab || 'general');
   const [isSaving, setIsSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
   
   const [showServiceModal, setShowServiceModal] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [showLogModal, setShowLogModal] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
 
   const [services, setServices] = useState<Service[]>(MOCK_SERVICES);
-  const [inactiveServices, setInactiveServices] = useState<Service[]>([]);
+
+  // Password state
+  const [passwords, setPasswords] = useState({
+    current: '',
+    new: '',
+    confirm: ''
+  });
 
   const menuItems = [
     { id: 'general', label: 'Geral', icon: Globe },
@@ -96,8 +104,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
   ]);
 
   const copyToClipboard = (text: string) => {
+    if (!text) return;
     navigator.clipboard.writeText(text);
-    alert("Identificador copiado!");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleSave = () => {
@@ -113,10 +123,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
     setShowServiceModal(true);
   };
 
+  const handleDeleteService = (id: string) => {
+    if (confirm("Deseja realmente excluir este serviço?")) {
+      setServices(services.filter(s => s.id !== id));
+    }
+  };
+
   const handleSaveService = (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget as HTMLFormElement);
-    const serviceData = {
+    const serviceData: Service = {
       id: editingService?.id || Math.random().toString(36).substr(2, 9),
       name: formData.get('name') as string,
       price: Number(formData.get('price')),
@@ -130,6 +146,21 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
       setServices([...services, serviceData]);
     }
     setShowServiceModal(false);
+    setEditingService(null);
+  };
+
+  const handlePasswordUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwords.new !== passwords.confirm) {
+      alert("As novas senhas não coincidem.");
+      return;
+    }
+    setIsSaving(true);
+    setTimeout(() => {
+      setIsSaving(false);
+      setPasswords({ current: '', new: '', confirm: '' });
+      alert("Senha redefinida com sucesso!");
+    }, 1200);
   };
 
   const renderContent = () => {
@@ -192,13 +223,42 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
               <div className="space-y-4">
                 {services.map((s) => (
                   <div key={s.id} className="bg-zinc-800/50 border border-zinc-800 p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:border-amber-500/30 transition-all">
-                    <div>
+                    <div className="flex-1">
                       <h3 className="font-bold text-zinc-100 group-hover:text-amber-500 transition-colors">{s.name}</h3>
-                      <p className="text-xs text-zinc-500 font-medium">Duração: {s.duration} min</p>
+                      <div className="flex gap-4 mt-1">
+                        <p className="text-xs text-zinc-500 font-medium flex items-center gap-1">
+                          <Clock size={12} /> {s.duration} min
+                        </p>
+                        <p className="text-xs text-amber-500 font-black">
+                          R$ {s.price.toFixed(2)}
+                        </p>
+                      </div>
+                      {s.description && <p className="text-[10px] text-zinc-600 mt-2 line-clamp-1 italic">{s.description}</p>}
                     </div>
-                    <span className="text-lg font-black text-white">R$ {s.price.toFixed(2)}</span>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleOpenServiceModal(s)}
+                        className="p-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded-xl transition-all border border-zinc-700"
+                        title="Editar"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteService(s.id)}
+                        className="p-2.5 bg-zinc-800 hover:bg-rose-500/10 text-zinc-400 hover:text-rose-500 rounded-xl transition-all border border-zinc-700"
+                        title="Excluir"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 ))}
+                {services.length === 0 && (
+                  <div className="text-center py-12 border-2 border-dashed border-zinc-800 rounded-3xl">
+                    <Scissors size={48} className="mx-auto text-zinc-800 mb-4" />
+                    <p className="text-zinc-500 font-medium">Nenhum serviço cadastrado.</p>
+                  </div>
+                )}
               </div>
           </div>
         );
@@ -317,19 +377,141 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
         );
       case 'security':
         return (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="bg-zinc-900 border border-zinc-800 p-6 md:p-8 rounded-3xl relative overflow-hidden">
-              <h2 className="text-xl font-bold mb-6 flex items-center gap-2 relative z-10">
-                <Hash className="text-amber-500" size={20} /> Identificador
-              </h2>
-              <div className="max-w-md space-y-4 relative z-10">
-                <div className="flex bg-zinc-950 border border-zinc-800 rounded-2xl p-4 items-center justify-between group">
-                  <code className="text-amber-500 font-black tracking-widest uppercase truncate mr-2">
-                    {user?.companyCode || 'NÃO DEFINIDO'}
-                  </code>
-                  <button onClick={() => copyToClipboard(user?.companyCode || '')} className="text-zinc-500 hover:text-white shrink-0">
-                    <Copy size={18} />
+          <div className="space-y-8 animate-in fade-in duration-500">
+            {/* Identificador da Unidade Section */}
+            <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-[32px] relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-8 opacity-5 -mr-8 -mt-8 group-hover:opacity-10 transition-opacity pointer-events-none">
+                <Hash size={120} />
+              </div>
+              
+              <div className="relative z-10 space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="bg-amber-500/10 p-3 rounded-2xl text-amber-500">
+                    <Hash size={24} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-white uppercase tracking-tight">Identificador da Unidade</h2>
+                    <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest">Código de Conexão</p>
+                  </div>
+                </div>
+
+                <div className="bg-zinc-950/50 border border-zinc-800 p-6 rounded-2xl space-y-4">
+                  <p className="text-sm text-zinc-400 leading-relaxed font-medium">
+                    Este código é a <span className="text-amber-500 font-bold">chave de conexão</span> exclusiva da sua barbearia. 
+                    Novos <span className="text-white font-bold">barbeiros e recepcionistas</span> devem informá-lo durante o cadastro para serem vinculados automaticamente à sua unidade e painel administrativo.
+                  </p>
+                  
+                  <div className="flex items-center gap-2 pt-2">
+                    <div className="flex-1 bg-zinc-900 border border-zinc-800 rounded-2xl px-6 py-4 flex items-center justify-between group/code transition-all hover:border-amber-500/30">
+                      <code className="text-lg font-black text-amber-500 tracking-[0.15em] uppercase">
+                        {user?.companyCode || 'NÃO_DEFINIDO'}
+                      </code>
+                      <button 
+                        onClick={() => copyToClipboard(user?.companyCode || '')} 
+                        className={`flex items-center gap-2 transition-all font-black text-[10px] uppercase tracking-widest ${copied ? 'text-emerald-500' : 'text-zinc-500 hover:text-white'}`}
+                      >
+                        {copied ? (
+                          <>COPIADO <Check size={14} /></>
+                        ) : (
+                          <>COPIAR <Copy size={14} /></>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 px-2">
+                  <AlertTriangle size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-[10px] text-zinc-600 font-bold uppercase leading-tight">
+                    Aviso: Nunca compartilhe este código com pessoas externas à sua equipe de confiança.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Senha e Acesso Section */}
+            <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-[32px] relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-8 opacity-5 -mr-8 -mt-8 group-hover:opacity-10 transition-opacity pointer-events-none">
+                <Lock size={120} />
+              </div>
+
+              <div className="relative z-10 space-y-8">
+                <div className="flex items-center gap-4">
+                  <div className="bg-amber-500/10 p-3 rounded-2xl text-amber-500">
+                    <Lock size={24} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-white uppercase tracking-tight">Segurança da Conta</h2>
+                    <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest">Alterar Credenciais</p>
+                  </div>
+                </div>
+
+                <form onSubmit={handlePasswordUpdate} className="space-y-6 max-w-lg">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Senha Atual</label>
+                      <div className="relative">
+                        <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
+                        <input 
+                          required
+                          type="password"
+                          placeholder="••••••••"
+                          value={passwords.current}
+                          onChange={(e) => setPasswords({...passwords, current: e.target.value})}
+                          className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Nova Senha</label>
+                        <div className="relative">
+                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
+                          <input 
+                            required
+                            type="password"
+                            placeholder="••••••••"
+                            value={passwords.new}
+                            onChange={(e) => setPasswords({...passwords, new: e.target.value})}
+                            className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Confirmar Nova Senha</label>
+                        <div className="relative">
+                          <CheckCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
+                          <input 
+                            required
+                            type="password"
+                            placeholder="••••••••"
+                            value={passwords.confirm}
+                            onChange={(e) => setPasswords({...passwords, confirm: e.target.value})}
+                            className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit"
+                    disabled={isSaving}
+                    className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black px-8 py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 text-xs uppercase tracking-widest shadow-lg shadow-amber-500/10 disabled:opacity-50"
+                  >
+                    {isSaving ? <CheckCircle2 size={18} className="animate-pulse" /> : <Save size={18} />}
+                    {isSaving ? 'Processando...' : 'Atualizar Minha Senha'}
                   </button>
+                </form>
+
+                <div className="pt-4 border-t border-zinc-800 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-zinc-800 p-2 rounded-lg text-zinc-400">
+                      <RotateCcw size={16} />
+                    </div>
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase">Esqueceu a senha? Entre em contato com o suporte global.</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -379,6 +561,84 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
           {renderContent()}
         </div>
       </div>
+
+      {/* Modal de Serviço */}
+      {showServiceModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/50">
+              <h2 className="text-xl font-bold flex items-center gap-3">
+                <Scissors className="text-amber-500" /> {editingService ? 'Editar' : 'Novo'} Serviço
+              </h2>
+              <button 
+                onClick={() => { setShowServiceModal(false); setEditingService(null); }} 
+                className="text-zinc-500 hover:text-white p-2"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSaveService} className="p-8 space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Nome do Serviço</label>
+                  <input 
+                    required 
+                    name="name" 
+                    defaultValue={editingService?.name} 
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500" 
+                    placeholder="Ex: Corte Degradê" 
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Preço (R$)</label>
+                    <input 
+                      required 
+                      type="number" 
+                      step="0.01" 
+                      name="price" 
+                      defaultValue={editingService?.price} 
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-sm focus:outline-none" 
+                      placeholder="0.00" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Duração (Min)</label>
+                    <input 
+                      required 
+                      type="number" 
+                      name="duration" 
+                      defaultValue={editingService?.duration} 
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-sm focus:outline-none" 
+                      placeholder="30" 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Descrição (Opcional)</label>
+                  <textarea 
+                    name="description" 
+                    defaultValue={editingService?.description} 
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-sm focus:outline-none h-24" 
+                    placeholder="Detalhes sobre o serviço..." 
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <button type="submit" className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 uppercase tracking-wider text-xs">
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle2 size={18} /> {editingService ? 'Salvar Alterações' : 'Adicionar Serviço'}
+                  </div>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

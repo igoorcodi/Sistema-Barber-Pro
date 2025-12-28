@@ -16,7 +16,8 @@ import {
   UserCheck,
   Menu,
   X,
-  Award
+  Award,
+  Clock
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -51,6 +52,7 @@ const Layout: React.FC<LayoutProps> = ({ children, role, activeView, onViewChang
     ],
     [UserRole.ADMIN]: [
       { id: 'exec', label: 'Executivo', icon: TrendingUp },
+      { id: 'bookings_admin', label: 'Agendamentos', icon: Clock },
       { id: 'staff', label: 'Barbeiros', icon: Scissors },
       { id: 'finance', label: 'Financeiro', icon: CreditCard },
       { id: 'stock', label: 'Estoque', icon: Package },
