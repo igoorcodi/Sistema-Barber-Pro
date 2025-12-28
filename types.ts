@@ -124,6 +124,7 @@ export interface StockTransaction {
 export interface Product {
   id: string;
   name: string;
+  costPrice: number;
   price: number;
   stock: number;
   minStock: number;

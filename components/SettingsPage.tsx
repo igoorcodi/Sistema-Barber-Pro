@@ -26,7 +26,8 @@ import {
   Crown,
   Edit3,
   Check,
-  Key
+  Key,
+  ArrowRight
 } from 'lucide-react';
 import { Service } from '../types';
 import { MOCK_SERVICES } from '../constants';
@@ -163,6 +164,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
     }, 1200);
   };
 
+  const handleUpdateTime = (idx: number, field: 'open' | 'close', value: string) => {
+    const newHours = [...businessHours];
+    newHours[idx][field] = value;
+    setBusinessHours(newHours);
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'general':
@@ -174,34 +181,70 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase">Nome da Barbearia</label>
-                  <input type="text" defaultValue="BarberMaster Pro Unidade Central" className="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500" />
+                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest ml-1">Nome da Barbearia</label>
+                  <input type="text" defaultValue="BarberMaster Pro Unidade Central" className="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 uppercase">WhatsApp de Contato</label>
-                  <input type="text" defaultValue="(11) 98765-4321" className="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500" />
+                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest ml-1">WhatsApp de Contato</label>
+                  <input type="text" defaultValue="(11) 98765-4321" className="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all" />
                 </div>
               </div>
             </div>
             <div className="bg-zinc-900 border border-zinc-800 p-6 md:p-8 rounded-3xl">
-              <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
-                <Clock className="text-amber-500" size={20} /> Horário de Funcionamento
-              </h2>
-              <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                  <h2 className="text-xl font-bold flex items-center gap-2">
+                    <Clock className="text-amber-500" size={20} /> Horário de Funcionamento
+                  </h2>
+                  <p className="text-xs text-zinc-500 font-medium">Defina os horários de abertura e fechamento da sua unidade.</p>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
                 {businessHours.map((bh, idx) => (
-                  <div key={idx} className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border transition-all ${bh.active ? 'bg-zinc-800/30 border-zinc-700' : 'bg-zinc-950/30 border-zinc-800 opacity-60'}`}>
-                    <div className="flex items-center gap-4 mb-4 sm:mb-0">
+                  <div key={idx} className={`p-5 rounded-2xl border transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-4 ${bh.active ? 'bg-zinc-800/40 border-zinc-700 shadow-lg shadow-zinc-950/20' : 'bg-zinc-950/30 border-zinc-800 opacity-50 grayscale'}`}>
+                    <div className="flex items-center gap-4 min-w-[150px]">
                       <button 
                         onClick={() => {
                           const newHours = [...businessHours];
                           newHours[idx].active = !newHours[idx].active;
                           setBusinessHours(newHours);
                         }}
-                        className={`w-10 h-5 rounded-full relative transition-colors ${bh.active ? 'bg-amber-500' : 'bg-zinc-700'}`}
+                        className={`w-11 h-6 rounded-full relative transition-all duration-300 flex items-center ${bh.active ? 'bg-amber-500 shadow-md shadow-amber-500/20' : 'bg-zinc-700'}`}
                       >
-                        <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${bh.active ? 'left-5.5' : 'left-0.5'}`} />
+                        <div className={`absolute w-4.5 h-4.5 rounded-full bg-white shadow-sm transition-all duration-300 ${bh.active ? 'left-5.5' : 'left-1'}`} />
                       </button>
-                      <span className="font-bold text-sm w-24">{bh.day}</span>
+                      <span className="font-black text-sm uppercase tracking-wider text-zinc-200">{bh.day}</span>
+                    </div>
+
+                    <div className="flex items-center gap-3 flex-1 md:justify-end">
+                      <div className="flex flex-col gap-1 flex-1 md:flex-none">
+                        <label className="text-[9px] font-black text-zinc-500 uppercase ml-1">Abertura</label>
+                        <div className="relative">
+                          <input 
+                            type="time" 
+                            disabled={!bh.active}
+                            value={bh.open}
+                            onChange={(e) => handleUpdateTime(idx, 'open', e.target.value)}
+                            className="bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all text-white w-full md:w-32 disabled:opacity-30 disabled:cursor-not-allowed" 
+                          />
+                        </div>
+                      </div>
+
+                      <ArrowRight size={14} className="text-zinc-600 mt-4 hidden md:block" />
+
+                      <div className="flex flex-col gap-1 flex-1 md:flex-none">
+                        <label className="text-[9px] font-black text-zinc-500 uppercase ml-1">Fechamento</label>
+                        <div className="relative">
+                          <input 
+                            type="time" 
+                            disabled={!bh.active}
+                            value={bh.close}
+                            onChange={(e) => handleUpdateTime(idx, 'close', e.target.value)}
+                            className="bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all text-white w-full md:w-32 disabled:opacity-30 disabled:cursor-not-allowed" 
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -216,7 +259,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
                 <h2 className="text-xl font-bold flex items-center gap-2">
                   <Scissors className="text-amber-500" size={20} /> Catálogo de Serviços
                 </h2>
-                <button onClick={() => handleOpenServiceModal()} className="bg-amber-500 hover:bg-amber-600 text-zinc-950 px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
+                <button onClick={() => handleOpenServiceModal()} className="bg-amber-500 hover:bg-amber-600 text-zinc-950 px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all active:scale-95 shadow-lg shadow-amber-500/10">
                   <Plus size={16} /> Adicionar Serviço
                 </button>
               </div>
@@ -255,7 +298,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
                 ))}
                 {services.length === 0 && (
                   <div className="text-center py-12 border-2 border-dashed border-zinc-800 rounded-3xl">
-                    <Scissors size={48} className="mx-auto text-zinc-800 mb-4" />
+                    <Scissors size={48} className="mx-auto text-zinc-800 mb-4 opacity-20" />
                     <p className="text-zinc-500 font-medium">Nenhum serviço cadastrado.</p>
                   </div>
                 )}
@@ -363,10 +406,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
             </h2>
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-400 uppercase">Tom de Voz</label>
+                <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest ml-1">Tom de Voz</label>
                 <div className="grid grid-cols-1 xs:grid-cols-3 gap-3">
                   {['Profissional', 'Descontraído', 'Moderno'].map(tone => (
-                    <button key={tone} className={`py-3 rounded-xl text-sm font-bold border transition-all ${tone === 'Moderno' ? 'bg-amber-500/10 border-amber-500 text-amber-500' : 'bg-zinc-800 border-zinc-700 text-zinc-500'}`}>
+                    <button key={tone} className={`py-3 rounded-xl text-sm font-bold border transition-all ${tone === 'Moderno' ? 'bg-amber-500/10 border-amber-500 text-amber-500' : 'bg-zinc-800 border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}>
                       {tone}
                     </button>
                   ))}
@@ -449,7 +492,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
                 <form onSubmit={handlePasswordUpdate} className="space-y-6 max-w-lg">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Senha Atual</label>
+                      <label className="text-[10px] font-black text-zinc-500 uppercase ml-2 tracking-widest">Senha Atual</label>
                       <div className="relative">
                         <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
                         <input 
@@ -465,7 +508,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Nova Senha</label>
+                        <label className="text-[10px] font-black text-zinc-500 uppercase ml-2 tracking-widest">Nova Senha</label>
                         <div className="relative">
                           <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
                           <input 
@@ -479,7 +522,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Confirmar Nova Senha</label>
+                        <label className="text-[10px] font-black text-zinc-500 uppercase ml-2 tracking-widest">Confirmar Nova Senha</label>
                         <div className="relative">
                           <CheckCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
                           <input 
@@ -510,7 +553,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
                     <div className="bg-zinc-800 p-2 rounded-lg text-zinc-400">
                       <RotateCcw size={16} />
                     </div>
-                    <span className="text-[10px] font-bold text-zinc-500 uppercase">Esqueceu a senha? Entre em contato com o suporte global.</span>
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Esqueceu a senha? Entre em contato com o suporte global.</span>
                   </div>
                 </div>
               </div>
@@ -523,16 +566,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div>
           <h1 className="text-3xl font-bold">Configurações</h1>
-          <p className="text-zinc-500">Personalize sua barbearia e os algoritmos de IA.</p>
+          <p className="text-zinc-500 font-medium">Personalize sua barbearia e os algoritmos de IA.</p>
         </div>
         <button 
           onClick={handleSave}
           disabled={isSaving}
-          className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black px-8 py-3 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all disabled:opacity-50"
+          className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black px-8 py-3 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all active:scale-95 disabled:opacity-50"
         >
           {isSaving ? <CheckCircle2 size={20} className="animate-pulse" /> : <Save size={20} />}
           {isSaving ? 'Salvando...' : 'Salvar Alterações'}
@@ -541,15 +584,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-1">
-          <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 no-scrollbar">
+          <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 no-scrollbar sticky lg:top-8">
             {menuItems.map((item) => (
               <button 
                 key={item.id} 
                 onClick={() => setActiveTab(item.id)}
-                className={`flex-none lg:w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold text-xs uppercase tracking-wider whitespace-nowrap ${
+                className={`flex-none lg:w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold text-xs uppercase tracking-widest whitespace-nowrap border ${
                   activeTab === item.id 
-                  ? 'bg-amber-500/10 text-amber-500 border border-amber-500/10' 
-                  : 'text-zinc-500 hover:text-white hover:bg-zinc-800/50'
+                  ? 'bg-amber-500/10 text-amber-500 border-amber-500/10' 
+                  : 'text-zinc-500 hover:text-white border-transparent hover:bg-zinc-800/50'
                 }`}
               >
                 <item.icon size={18} /> {item.label}
@@ -572,7 +615,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
               </h2>
               <button 
                 onClick={() => { setShowServiceModal(false); setEditingService(null); }} 
-                className="text-zinc-500 hover:text-white p-2"
+                className="text-zinc-500 hover:text-white p-2 hover:bg-zinc-800 rounded-full transition-all"
               >
                 <X size={24} />
               </button>
@@ -581,58 +624,56 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ user, initialTab }) => {
             <form onSubmit={handleSaveService} className="p-8 space-y-6">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Nome do Serviço</label>
+                  <label className="text-[10px] font-black text-zinc-500 uppercase ml-2 tracking-widest">Nome do Serviço</label>
                   <input 
                     required 
                     name="name" 
                     defaultValue={editingService?.name} 
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500" 
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all placeholder:text-zinc-600" 
                     placeholder="Ex: Corte Degradê" 
                   />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Preço (R$)</label>
+                    <label className="text-[10px] font-black text-zinc-500 uppercase ml-2 tracking-widest">Preço (R$)</label>
                     <input 
                       required 
                       type="number" 
                       step="0.01" 
                       name="price" 
                       defaultValue={editingService?.price} 
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-sm focus:outline-none" 
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all placeholder:text-zinc-600" 
                       placeholder="0.00" 
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Duração (Min)</label>
+                    <label className="text-[10px] font-black text-zinc-500 uppercase ml-2 tracking-widest">Duração (Min)</label>
                     <input 
                       required 
                       type="number" 
                       name="duration" 
                       defaultValue={editingService?.duration} 
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-sm focus:outline-none" 
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all placeholder:text-zinc-600" 
                       placeholder="30" 
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Descrição (Opcional)</label>
+                  <label className="text-[10px] font-black text-zinc-500 uppercase ml-2 tracking-widest">Descrição (Opcional)</label>
                   <textarea 
                     name="description" 
                     defaultValue={editingService?.description} 
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-sm focus:outline-none h-24" 
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all placeholder:text-zinc-600 h-24 resize-none" 
                     placeholder="Detalhes sobre o serviço..." 
                   />
                 </div>
               </div>
 
               <div className="pt-4">
-                <button type="submit" className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 uppercase tracking-wider text-xs">
-                  <div className="flex items-center justify-center gap-2">
-                    <CheckCircle2 size={18} /> {editingService ? 'Salvar Alterações' : 'Adicionar Serviço'}
-                  </div>
+                <button type="submit" className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 uppercase tracking-widest text-xs flex items-center justify-center gap-2">
+                  <CheckCircle2 size={18} /> {editingService ? 'Salvar Alterações' : 'Adicionar Serviço'}
                 </button>
               </div>
             </form>

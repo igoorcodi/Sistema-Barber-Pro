@@ -101,4 +101,14 @@ export const MOCK_SERVICES: Service[] = [
 ];
 
 export const MOCK_CATEGORIES: Category[] = [{ id: 'cat1', name: 'Pomadas' }];
-export const MOCK_PRODUCTS: Product[] = [{ id: 'p1', name: 'Pomada Modeladora', price: 45, stock: 15, minStock: 5, categoryId: 'cat1' }];
+export const MOCK_PRODUCTS: Product[] = [
+  { 
+    id: 'p1', 
+    name: 'Pomada Modeladora', 
+    costPrice: 22.50,
+    price: 45, 
+    stock: 15, 
+    minStock: 5, 
+    categoryId: 'cat1' 
+  }
+];

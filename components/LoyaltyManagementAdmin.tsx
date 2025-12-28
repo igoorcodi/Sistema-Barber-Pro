@@ -21,7 +21,9 @@ import {
   Lock,
   MessageSquare,
   Zap,
-  ArrowRight
+  ArrowRight,
+  PlusCircle,
+  MinusCircle
 } from 'lucide-react';
 import { MOCK_LOYALTY_RULES, MOCK_LOYALTY_TIERS, MOCK_CLIENTS, MOCK_REWARDS } from '../constants';
 import { LoyaltyRule, LoyaltyTier, ClientProfile, Reward } from '../types';
@@ -41,6 +43,10 @@ const LoyaltyManagementAdmin: React.FC<LoyaltyManagementAdminProps> = ({ user, o
   const [searchTerm, setSearchTerm] = useState('');
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<LoyaltyRule | null>(null);
+
+  const [isTierModalOpen, setIsTierModalOpen] = useState(false);
+  const [editingTier, setEditingTier] = useState<LoyaltyTier | null>(null);
+  const [newBenefit, setNewBenefit] = useState('');
 
   const isRookie = user?.plan?.includes('Rookie') || user?.plan?.includes('Free');
 
@@ -72,6 +78,39 @@ const LoyaltyManagementAdmin: React.FC<LoyaltyManagementAdminProps> = ({ user, o
     }
     setIsRuleModalOpen(false);
     setEditingRule(null);
+  };
+
+  const handleEditTier = (tier: LoyaltyTier) => {
+    setEditingTier({ ...tier, benefits: [...tier.benefits] });
+    setIsTierModalOpen(true);
+  };
+
+  const handleAddBenefit = () => {
+    if (newBenefit.trim() && editingTier) {
+      setEditingTier({
+        ...editingTier,
+        benefits: [...editingTier.benefits, newBenefit.trim()]
+      });
+      setNewBenefit('');
+    }
+  };
+
+  const handleRemoveBenefit = (index: number) => {
+    if (editingTier) {
+      setEditingTier({
+        ...editingTier,
+        benefits: editingTier.benefits.filter((_, i) => i !== index)
+      });
+    }
+  };
+
+  const handleSaveTier = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTier) return;
+
+    setTiers(tiers.map(t => t.id === editingTier.id ? editingTier : t));
+    setIsTierModalOpen(false);
+    setEditingTier(null);
   };
 
   if (isRookie) {
@@ -187,16 +226,16 @@ const LoyaltyManagementAdmin: React.FC<LoyaltyManagementAdminProps> = ({ user, o
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {rules.map((rule) => (
-                <div key={rule.id} className="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl space-y-4 hover:border-amber-500/30 transition-all group">
+                <div key={rule.id} className={`bg-zinc-900 border border-zinc-800 p-6 rounded-3xl space-y-4 hover:border-amber-500/30 transition-all group ${!rule.isActive ? 'opacity-60 grayscale-[0.5]' : ''}`}>
                   <div className="flex justify-between items-start">
                     <div className="bg-zinc-800 p-3 rounded-2xl group-hover:bg-amber-500/10 transition-colors">
-                      <Settings className="text-zinc-500 group-hover:text-amber-500" size={20} />
+                      <Settings className={`${rule.isActive ? 'text-amber-500' : 'text-zinc-500'}`} size={20} />
                     </div>
-                    <button onClick={() => toggleRuleStatus(rule.id)}>
+                    <button onClick={() => toggleRuleStatus(rule.id)} className="transition-transform active:scale-90">
                       {rule.isActive ? (
-                        <ToggleRight className="text-emerald-500" size={32} />
+                        <ToggleRight className="text-emerald-500" size={36} />
                       ) : (
-                        <ToggleLeft className="text-zinc-700" size={32} />
+                        <ToggleLeft className="text-zinc-700" size={36} />
                       )}
                     </button>
                   </div>
@@ -226,7 +265,7 @@ const LoyaltyManagementAdmin: React.FC<LoyaltyManagementAdminProps> = ({ user, o
             <h2 className="text-xl font-bold">Hierarquia de Níveis</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {tiers.map((tier) => (
-                <div key={tier.id} className="bg-zinc-900 border border-zinc-800 p-8 rounded-[40px] relative overflow-hidden group">
+                <div key={tier.id} className="bg-zinc-900 border border-zinc-800 p-8 rounded-[40px] relative overflow-hidden group hover:border-amber-500/20 transition-all">
                   <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                     <Trophy size={80} />
                   </div>
@@ -250,7 +289,12 @@ const LoyaltyManagementAdmin: React.FC<LoyaltyManagementAdminProps> = ({ user, o
 
                     <div className="pt-4 flex justify-between items-center">
                        <span className="text-xs font-bold text-zinc-500">Multip: {tier.multiplier}x</span>
-                       <button className="text-zinc-500 hover:text-white"><Edit3 size={16} /></button>
+                       <button 
+                        onClick={() => handleEditTier(tier)}
+                        className="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded-xl transition-all border border-zinc-700"
+                       >
+                        <Edit3 size={16} />
+                       </button>
                     </div>
                   </div>
                 </div>
@@ -343,6 +387,116 @@ const LoyaltyManagementAdmin: React.FC<LoyaltyManagementAdminProps> = ({ user, o
         )}
       </div>
 
+      {/* Modal Edição de Nível (Tier) */}
+      {isTierModalOpen && editingTier && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/50">
+              <div className="flex items-center gap-4">
+                <div className="bg-amber-500/10 p-3 rounded-2xl text-amber-500">
+                  <Trophy size={24} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Editar Nível</h2>
+                  <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest">Configuração de Hierarquia</p>
+                </div>
+              </div>
+              <button onClick={() => setIsTierModalOpen(false)} className="text-zinc-500 hover:text-white p-2">
+                <X size={28} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveTier} className="p-8 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Nome do Nível</label>
+                  <input 
+                    required 
+                    type="text" 
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all"
+                    value={editingTier.name}
+                    onChange={(e) => setEditingTier({...editingTier, name: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Pontos Mínimos</label>
+                  <input 
+                    required 
+                    type="number" 
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all"
+                    value={editingTier.minPoints}
+                    onChange={(e) => setEditingTier({...editingTier, minPoints: Number(e.target.value)})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Multiplicador de Pontos</label>
+                  <div className="relative">
+                    <input 
+                      required 
+                      type="number" 
+                      step="0.05"
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl py-4 px-6 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all"
+                      value={editingTier.multiplier}
+                      onChange={(e) => setEditingTier({...editingTier, multiplier: Number(e.target.value)})}
+                    />
+                    <span className="absolute right-6 top-1/2 -translate-y-1/2 text-zinc-500 font-black">x</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-zinc-500 uppercase ml-2">Gestão de Benefícios</label>
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    placeholder="Novo benefício... ex: Café grátis"
+                    className="flex-1 bg-zinc-800 border border-zinc-700 rounded-2xl py-4 px-6 text-sm focus:outline-none"
+                    value={newBenefit}
+                    onChange={(e) => setNewBenefit(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddBenefit())}
+                  />
+                  <button 
+                    type="button"
+                    onClick={handleAddBenefit}
+                    className="bg-amber-500 text-zinc-950 px-6 rounded-2xl transition-all active:scale-95"
+                  >
+                    <PlusCircle size={24} />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto pr-2 no-scrollbar">
+                  {editingTier.benefits.map((benefit, idx) => (
+                    <div key={idx} className="bg-zinc-800/50 border border-zinc-700 p-3 px-4 rounded-xl flex items-center justify-between group">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 size={16} className="text-amber-500" />
+                        <span className="text-xs font-bold text-zinc-300">{benefit}</span>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => handleRemoveBenefit(idx)}
+                        className="text-zinc-600 hover:text-rose-500 transition-colors"
+                      >
+                        <MinusCircle size={18} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-6">
+                <button 
+                  type="submit" 
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black py-5 rounded-[24px] flex items-center justify-center gap-3 shadow-xl shadow-amber-500/20 transition-all active:scale-95 uppercase tracking-widest text-sm"
+                >
+                  <Save size={20} /> Salvar Alterações no Nível
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Regra de Pontuação */}
       {isRuleModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-md animate-in fade-in duration-300">
           <div className="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
