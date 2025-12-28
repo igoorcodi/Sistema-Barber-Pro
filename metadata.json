@@ -1,0 +1,8 @@
+{
+  "name": "BarberMaster Pro SaaS",
+  "description": "A comprehensive barbershop management system featuring client booking, barber schedules, reception check-ins, and administrative dashboards with AI-powered marketing insights.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
