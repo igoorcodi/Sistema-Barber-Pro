@@ -51,20 +51,28 @@ const App: React.FC = () => {
   const [currentRole, setCurrentRole] = useState<UserRole>(UserRole.CLIENT);
   const [activeView, setActiveView] = useState<string>('book');
   const [initialSettingsTab, setInitialSettingsTab] = useState<string>('general');
-  const [user, setUser] = useState<any>({ id: 'u1', name: 'Henrique Silva', email: 'henrique@barber.pro', companyCode: 'BARBER-MASTER-01' });
+  const [user, setUser] = useState<any>({ 
+    id: 'u1', 
+    name: 'Henrique Silva', 
+    email: 'henrique@barber.pro', 
+    companyCode: 'BARBER-MASTER-01',
+    role: UserRole.CLIENT
+  });
   
-  // Estado centralizado de agendamentos
   const [bookings, setBookings] = useState<Booking[]>(INITIAL_BOOKINGS);
 
   useEffect(() => {
     if (!isAuthenticated) return;
     
+    // Roteamento automático baseado no cargo após o login
+    let defaultView = 'book';
     switch(currentRole) {
-      case UserRole.ADMIN: setActiveView('exec'); break;
-      case UserRole.CLIENT: setActiveView('book'); break;
-      case UserRole.BARBER: setActiveView('dash'); break;
-      case UserRole.RECEPTIONIST: setActiveView('bookings'); break;
+      case UserRole.ADMIN: defaultView = 'exec'; break;
+      case UserRole.CLIENT: defaultView = 'book'; break;
+      case UserRole.BARBER: defaultView = 'dash'; break;
+      case UserRole.RECEPTIONIST: defaultView = 'bookings'; break;
     }
+    setActiveView(defaultView);
   }, [currentRole, isAuthenticated]);
 
   const handleAuthSuccess = (role: UserRole, userData: any) => {
@@ -75,7 +83,7 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    setUser({ id: '', name: 'Usuário', email: '', companyCode: '' });
+    setUser({ id: '', name: 'Usuário', email: '', companyCode: '', role: UserRole.CLIENT });
     setCurrentRole(UserRole.CLIENT);
     setActiveView('book');
   };
@@ -98,6 +106,8 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
+    if (!isAuthenticated) return null;
+
     if (currentRole === UserRole.CLIENT) return <ClientPortal activeView={activeView} onNewBooking={handleNewBooking} />;
     
     if (currentRole === UserRole.RECEPTIONIST) {
@@ -135,7 +145,7 @@ const App: React.FC = () => {
       }
     }
 
-    return <div>View not found</div>;
+    return <div className="p-20 text-center text-zinc-500 italic">Selecione uma opção no menu lateral.</div>;
   };
 
   if (!isAuthenticated) {
