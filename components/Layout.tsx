@@ -17,7 +17,9 @@ import {
   Menu,
   X,
   Award,
-  Clock
+  Clock,
+  Hash,
+  Lock
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -28,9 +30,10 @@ interface LayoutProps {
   onRoleChange: (role: UserRole) => void;
   onLogout: () => void;
   userName: string;
+  companyCode?: string;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, role, activeView, onViewChange, onLogout, userName }) => {
+const Layout: React.FC<LayoutProps> = ({ children, role, activeView, onViewChange, onLogout, userName, companyCode }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = {
@@ -91,13 +94,22 @@ const Layout: React.FC<LayoutProps> = ({ children, role, activeView, onViewChang
         ))}
       </nav>
 
-      <div className="p-4 border-t border-zinc-800">
+      <div className="p-4 border-t border-zinc-800 space-y-3">
+        {companyCode && (
+          <div className="mx-2 px-3 py-2 bg-zinc-800/50 rounded-xl border border-zinc-700/30 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Hash size={14} className="text-amber-500" />
+              <span className="text-[10px] font-black text-zinc-400 tracking-widest uppercase truncate max-w-[120px]">{companyCode}</span>
+            </div>
+            <Lock size={12} className="text-zinc-600" />
+          </div>
+        )}
         <button 
           onClick={onLogout}
-          className="w-full flex items-center gap-3 px-4 py-4 text-zinc-500 hover:text-rose-500 rounded-2xl transition-all font-bold text-sm uppercase group"
+          className="w-full flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-rose-500 rounded-2xl transition-all font-bold text-sm uppercase group"
         >
           <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
-          <span>Sair do Sistema</span>
+          <span>Sair</span>
         </button>
       </div>
     </>
@@ -110,7 +122,7 @@ const Layout: React.FC<LayoutProps> = ({ children, role, activeView, onViewChang
         <SidebarContent />
       </aside>
 
-      {/* Mobile Menu Drawer Overlay */}
+      {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div 
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] lg:hidden"
@@ -118,7 +130,7 @@ const Layout: React.FC<LayoutProps> = ({ children, role, activeView, onViewChang
         />
       )}
 
-      {/* Mobile Sidebar (Drawer) */}
+      {/* Mobile Sidebar */}
       <aside className={`fixed inset-y-0 left-0 w-72 bg-zinc-900 border-r border-zinc-800 flex flex-col z-[101] transition-transform duration-300 lg:hidden ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="absolute top-6 right-4 lg:hidden">
           <button onClick={() => setIsMobileMenuOpen(false)} className="text-zinc-500 hover:text-white">
@@ -148,6 +160,11 @@ const Layout: React.FC<LayoutProps> = ({ children, role, activeView, onViewChang
           </div>
 
           <div className="flex items-center gap-3 sm:gap-6">
+            <div className="hidden md:flex items-center gap-2 bg-zinc-950 px-3 py-1.5 rounded-full border border-zinc-800 shadow-inner">
+               <Hash size={12} className="text-amber-500" />
+               <span className="text-[10px] font-black text-zinc-500 tracking-[0.2em]">{companyCode || 'SISTEMA'}</span>
+            </div>
+            
             <button className="relative text-zinc-500 hover:text-zinc-100 transition-colors bg-zinc-800/50 p-2.5 rounded-xl border border-zinc-700/30 hidden sm:block">
               <Bell size={20} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-amber-500 rounded-full border-2 border-zinc-900"></span>

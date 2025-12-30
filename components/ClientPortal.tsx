@@ -16,15 +16,16 @@ import {
   Navigation2,
   Calendar as CalendarIcon
 } from 'lucide-react';
-import { Service, Barber, Barbershop } from '../types';
+import { Service, Barber, Barbershop, Booking } from '../types';
 import { GoogleGenAI, Type } from "@google/genai";
 import LoyaltyMenu from './LoyaltyMenu';
 
 interface ClientPortalProps {
   activeView: string;
+  onNewBooking?: (booking: Booking) => void;
 }
 
-const ClientPortal: React.FC<ClientPortalProps> = ({ activeView }) => {
+const ClientPortal: React.FC<ClientPortalProps> = ({ activeView, onNewBooking }) => {
   const [step, setStep] = useState(1);
   const [selectedShop, setSelectedShop] = useState<Barbershop | null>(null);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -33,10 +34,8 @@ const ClientPortal: React.FC<ClientPortalProps> = ({ activeView }) => {
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Location States
   const [userLocation, setUserLocation] = useState<{ city: string; state: string } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
 
   useEffect(() => {
     requestLocation();
@@ -44,14 +43,10 @@ const ClientPortal: React.FC<ClientPortalProps> = ({ activeView }) => {
 
   const requestLocation = () => {
     setLocationLoading(true);
-    setLocationError(null);
-
     if (!navigator.geolocation) {
-      setLocationError("Geolocalização não suportada.");
       setLocationLoading(false);
       return;
     }
-
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
@@ -79,11 +74,27 @@ const ClientPortal: React.FC<ClientPortalProps> = ({ activeView }) => {
           setLocationLoading(false);
         }
       },
-      () => {
-        setLocationError("Localização negada.");
-        setLocationLoading(false);
-      }
+      () => setLocationLoading(false)
     );
+  };
+
+  const handleFinishBooking = () => {
+    if (selectedService && selectedBarber && selectedDate && selectedTime) {
+      const newBooking: Booking = {
+        id: Math.random().toString(36).substr(2, 9),
+        clientName: 'Gabriel Almeida', // Simulado para o usuário atual
+        clientAvatar: 'https://picsum.photos/seed/c1/100',
+        barberName: selectedBarber.name,
+        barberAvatar: selectedBarber.avatar || '',
+        serviceName: selectedService.name,
+        price: selectedService.price,
+        date: selectedDate,
+        time: selectedTime,
+        status: 'PENDING'
+      };
+      onNewBooking?.(newBooking);
+      setStep(5);
+    }
   };
 
   const nextStep = () => setStep(prev => prev + 1);
@@ -97,17 +108,9 @@ const ClientPortal: React.FC<ClientPortalProps> = ({ activeView }) => {
     setSelectedTime('');
   };
 
-  const filteredShops = MOCK_SHOPS.filter(shop => {
-    const matchesSearch = shop.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const isNearby = userLocation ? (shop.city.toLowerCase() === userLocation.city.toLowerCase()) : true;
-    return matchesSearch && isNearby;
-  });
+  const filteredShops = MOCK_SHOPS.filter(shop => shop.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  // RENDERIZAÇÃO BASEADA NA VIEW ATIVA DO LAYOUT
-  if (activeView === 'loyalty') {
-    return <LoyaltyMenu />;
-  }
-
+  if (activeView === 'loyalty') return <LoyaltyMenu />;
   if (activeView === 'history') {
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
@@ -135,7 +138,6 @@ const ClientPortal: React.FC<ClientPortalProps> = ({ activeView }) => {
     );
   }
 
-  // DEFAULT: VIEW 'BOOK'
   const renderStep = () => {
     switch(step) {
       case 1:
@@ -145,40 +147,25 @@ const ClientPortal: React.FC<ClientPortalProps> = ({ activeView }) => {
               <h2 className="text-3xl font-black uppercase tracking-tighter">Onde quer agendar?</h2>
               {userLocation && <p className="text-amber-500 text-xs font-bold uppercase flex items-center gap-2"><Navigation2 size={12} /> {userLocation.city} - {userLocation.state}</p>}
             </div>
-
-            <div className="flex gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
-                <input 
-                  type="text" 
-                  placeholder="Buscar barbearia..." 
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
+            <div className="flex-1 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+              <input type="text" placeholder="Buscar barbearia..." className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
-
-            {locationLoading ? (
-              <div className="flex justify-center py-20"><Loader2 className="animate-spin text-amber-500" size={32} /></div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {filteredShops.map(shop => (
-                  <button key={shop.id} onClick={() => { setSelectedShop(shop); nextStep(); }} className="bg-zinc-900 border border-zinc-800 rounded-[32px] overflow-hidden text-left hover:border-amber-500/50 transition-all">
-                    <img src={shop.image} className="h-40 w-full object-cover" />
-                    <div className="p-6">
-                      <h3 className="text-xl font-bold mb-1">{shop.name}</h3>
-                      <p className="text-zinc-500 text-sm mb-4">{shop.address}</p>
-                      <div className="flex items-center gap-2 text-amber-500 text-[10px] font-black uppercase"><Star size={12} fill="currentColor" /> {shop.rating} • Ver Agenda <ChevronRight size={14} /></div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredShops.map(shop => (
+                <button key={shop.id} onClick={() => { setSelectedShop(shop); nextStep(); }} className="bg-zinc-900 border border-zinc-800 rounded-[32px] overflow-hidden text-left hover:border-amber-500/50 transition-all">
+                  <img src={shop.image} className="h-40 w-full object-cover" />
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold mb-1">{shop.name}</h3>
+                    <p className="text-zinc-500 text-sm mb-4">{shop.address}</p>
+                    <div className="flex items-center gap-2 text-amber-500 text-[10px] font-black uppercase"><Star size={12} fill="currentColor" /> {shop.rating} • Ver Agenda <ChevronRight size={14} /></div>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         );
-
-      case 2: // Serviços
+      case 2:
         return (
           <div className="space-y-6 animate-in fade-in duration-500">
             <button onClick={prevStep} className="flex items-center gap-2 text-zinc-500 font-bold uppercase text-[10px]"><ArrowLeft size={16} /> Voltar</button>
@@ -196,8 +183,7 @@ const ClientPortal: React.FC<ClientPortalProps> = ({ activeView }) => {
             </div>
           </div>
         );
-
-      case 3: // Barbeiros
+      case 3:
         return (
           <div className="space-y-6 animate-in fade-in duration-500">
             <button onClick={prevStep} className="flex items-center gap-2 text-zinc-500 font-bold uppercase text-[10px]"><ArrowLeft size={16} /> Voltar</button>
@@ -213,8 +199,7 @@ const ClientPortal: React.FC<ClientPortalProps> = ({ activeView }) => {
             </div>
           </div>
         );
-
-      case 4: // Horário
+      case 4:
         return (
           <div className="space-y-6 animate-in fade-in duration-500">
             <button onClick={prevStep} className="flex items-center gap-2 text-zinc-500 font-bold uppercase text-[10px]"><ArrowLeft size={16} /> Voltar</button>
@@ -223,14 +208,13 @@ const ClientPortal: React.FC<ClientPortalProps> = ({ activeView }) => {
               <input type="date" className="w-full bg-zinc-800 border-none rounded-xl p-4 text-white mb-6" onChange={(e) => setSelectedDate(e.target.value)} />
               <div className="grid grid-cols-4 gap-3">
                 {['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'].map(t => (
-                  <button key={t} onClick={() => { setSelectedTime(t); nextStep(); }} className="bg-zinc-800 py-3 rounded-xl font-bold text-sm hover:bg-amber-500 hover:text-zinc-950 transition-all">{t}</button>
+                  <button key={t} onClick={() => { setSelectedTime(t); handleFinishBooking(); }} className="bg-zinc-800 py-3 rounded-xl font-bold text-sm hover:bg-amber-500 hover:text-zinc-950 transition-all">{t}</button>
                 ))}
               </div>
             </div>
           </div>
         );
-
-      case 5: // Sucesso
+      case 5:
         return (
           <div className="text-center space-y-8 animate-in zoom-in-95">
             <CheckCircle2 size={80} className="text-emerald-500 mx-auto" />

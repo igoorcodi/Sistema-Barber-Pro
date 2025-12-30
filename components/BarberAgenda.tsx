@@ -1,8 +1,14 @@
 
 import React, { useState } from 'react';
 import { Clock, User, Calendar as CalendarIcon, Filter, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Booking } from '../types';
 
-const BarberAgenda: React.FC = () => {
+interface BarberAgendaProps {
+  bookings: Booking[];
+}
+
+// Fixed: Added BarberAgendaProps to fix "Property 'bookings' does not exist on type 'IntrinsicAttributes'" error in App.tsx
+const BarberAgenda: React.FC<BarberAgendaProps> = ({ bookings }) => {
   const [selectedDay, setSelectedDay] = useState(new Date().getDate());
   
   const timeSlots = [
